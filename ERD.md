@@ -543,9 +543,9 @@ Log of rate-limited actions per user and action key.
 
 Key fields  
 • id UUID PK NOT NULL.  
-• user_id UUID NOT NULL – FK → profiles.id.  
-• action TEXT NOT NULL – e.g. create_catch, create_comment, send_report.  
-• created_at TIMESTAMPTZ NOT NULL DEFAULT now().
+ • user_id UUID NOT NULL – FK → profiles.id.  
+ • action TEXT NOT NULL – e.g. create_catch, create_comment, send_report.  
+ • created_at TIMESTAMPTZ NOT NULL DEFAULT now().
 
 Relationships  
 • 1 profile → many rate_limits entries.
@@ -555,9 +555,19 @@ Behaviour
 
 RLS intent  
 • Typical usage through SECURITY DEFINER RPCs.  
-• Direct access:  
- • A user may see only their own rows.  
+• Direct access:   
+ • A user may see only their own rows.   
  • Admins can see all.
+
+Rate limiting  
+• Actions and hourly limits enforced via `check_rate_limit`:   
+  • `comments` – max 20/hour.   
+  • `reports` – max 5/hour.   
+  • `reactions` – max 50/hour.   
+  • `ratings` – max 50/hour.   
+  • `follows` – max 30/hour.   
+• When a limit is hit, RPCs raise errors prefixed with `RATE_LIMITED: <action> – max <N> per hour` so the frontend can display a friendly toast.  
+• Rate-limit attempts are logged in `public.rate_limits (user_id, action, created_at)` and can be inspected via the `user_rate_limits` / `get_rate_limit_status` helpers for debugging.
 
 ⸻
 

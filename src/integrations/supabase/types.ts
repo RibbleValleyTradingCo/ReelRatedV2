@@ -842,7 +842,7 @@ export type Database = {
     }
     Functions: {
       admin_delete_catch: {
-        Args: { p_catch_id: string; p_reason?: string }
+        Args: { p_catch_id: string; p_reason: string }
         Returns: undefined
       }
       admin_delete_comment: {
@@ -850,7 +850,7 @@ export type Database = {
         Returns: undefined
       }
       admin_restore_catch: {
-        Args: { p_catch_id: string; p_reason?: string }
+        Args: { p_catch_id: string; p_reason: string }
         Returns: undefined
       }
       admin_restore_comment: {
@@ -864,7 +864,7 @@ export type Database = {
           p_severity?: Database["public"]["Enums"]["warning_severity"]
           p_user_id: string
         }
-        Returns: string
+        Returns: undefined
       }
       check_email_exists: { Args: { p_email: string }; Returns: boolean }
       check_rate_limit: {
@@ -877,6 +877,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_rate_limits: { Args: never; Returns: number }
+      create_comment_with_rate_limit: {
+        Args: { p_body: string; p_catch_id: string }
+        Returns: string
+      }
       create_notification: {
         Args: {
           p_actor_id?: string
@@ -887,6 +891,37 @@ export type Database = {
           p_type: Database["public"]["Enums"]["notification_type"]
           p_user_id: string
         }
+        Returns: string
+      }
+      create_report_with_rate_limit: {
+        Args: {
+          p_details?: string
+          p_reason: string
+          p_target_id: string
+          p_target_type: Database["public"]["Enums"]["report_target_type"]
+        }
+        Returns: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          resolution_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target_type"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reports"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      follow_profile_with_rate_limit: {
+        Args: { p_following_id: string }
         Returns: string
       }
       get_rate_limit_status: {
@@ -912,6 +947,14 @@ export type Database = {
             Args: { p_message: string; p_report_id?: string }
             Returns: undefined
           }
+      rate_catch_with_rate_limit: {
+        Args: { p_catch_id: string; p_rating: number }
+        Returns: string
+      }
+      react_to_catch_with_rate_limit: {
+        Args: { p_catch_id: string; p_reaction?: string }
+        Returns: boolean
+      }
       refresh_leaderboard: { Args: never; Returns: undefined }
       user_rate_limits: {
         Args: never
@@ -939,6 +982,8 @@ export type Database = {
         | "new_reaction"
         | "mention"
         | "admin_report"
+        | "admin_warning"
+        | "admin_moderation"
       reaction_type: "like" | "love" | "fire"
       report_status: "open" | "resolved" | "dismissed"
       report_target_type: "catch" | "comment" | "profile"
@@ -1090,6 +1135,8 @@ export const Constants = {
         "new_reaction",
         "mention",
         "admin_report",
+        "admin_warning",
+        "admin_moderation",
       ],
       reaction_type: ["like", "love", "fire"],
       report_status: ["open", "resolved", "dismissed"],

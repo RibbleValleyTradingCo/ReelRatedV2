@@ -12,7 +12,7 @@ import { MobileMenu, MOBILE_MENU_ID } from "@/components/MobileMenu";
 import { cn } from "@/lib/utils";
 
 export const Navbar = () => {
-  const { user } = useAuth();
+  const { user, isAuthReady, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -52,7 +52,11 @@ export const Navbar = () => {
   }, [user]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Failed to sign out. Please try again.");
+      return;
+    }
     toast.success("Signed out successfully");
     navigate("/");
     setMenuOpen(false);
@@ -171,7 +175,7 @@ export const Navbar = () => {
             })}
           </nav>
 
-          {user ? renderAuthIcons() : renderGuestActions()}
+          {!isAuthReady ? null : user ? renderAuthIcons() : renderGuestActions()}
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import ReportButton from "@/components/ReportButton";
 import { cn } from "@/lib/utils";
 import { resolveAvatarUrl } from "@/lib/storage";
 import { useRateLimit, formatResetTime } from "@/hooks/useRateLimit";
+import { isRateLimitError, getRateLimitMessage } from "@/lib/rateLimit";
 
 interface CatchCommentsProps {
   catchId: string;
@@ -229,18 +230,22 @@ export const CatchComments = memo(({ catchId, catchOwnerId, catchTitle, currentU
 
     setIsPosting(true);
     const body = newComment.trim();
-    const { data: insertedComment, error } = await supabase
-      .from("catch_comments")
-      .insert({
-        catch_id: catchId,
-        user_id: currentUserId,
-        body,
-      })
-      .select("id")
-      .single();
+    const { data: insertedCommentId, error } = await supabase.rpc(
+      "create_comment_with_rate_limit",
+      {
+        p_catch_id: catchId,
+        p_body: body,
+      },
+    );
 
     if (error) {
-      toast.error("Failed to post comment");
+      if (isRateLimitError(error)) {
+        toast.error(getRateLimitMessage(error));
+      } else {
+        toast.error("Failed to post comment");
+      }
+      setIsPosting(false);
+      return;
     } else {
       const actorName = user?.user_metadata?.username ?? user?.email ?? "Someone";
       setNewComment("");
@@ -253,7 +258,7 @@ export const CatchComments = memo(({ catchId, catchOwnerId, catchTitle, currentU
           payload: {
             message: `${actorName} commented on your catch "${catchTitle ?? "your catch"}".`,
             catchId,
-            commentId: insertedComment?.id,
+            commentId: insertedCommentId ?? undefined,
           },
         });
       }
@@ -279,13 +284,13 @@ export const CatchComments = memo(({ catchId, catchOwnerId, catchTitle, currentU
                   userId: profileRow.id,
                   actorId: currentUserId,
                   type: "mention",
-                  payload: {
-                    message: `${actorName} mentioned you in a comment.`,
-                    catchId,
-                    commentId: insertedComment?.id,
-                    extraData: { catch_title: catchTitle },
-                  },
-                })
+                    payload: {
+                      message: `${actorName} mentioned you in a comment.`,
+                      catchId,
+                      commentId: insertedCommentId ?? undefined,
+                      extraData: { catch_title: catchTitle },
+                    },
+                  })
               )
           );
         }

@@ -7,6 +7,7 @@ import html2canvas from "html2canvas";
 import { formatSpecies, formatWeight, formatSlugLabel } from "@/lib/catch-formatting";
 import type { CatchData } from "./useCatchData";
 import { logger } from "@/lib/logger";
+import { isRateLimitError, getRateLimitMessage } from "@/lib/rateLimit";
 
 interface UseCatchInteractionsParams {
   catchId: string | undefined;
@@ -109,13 +110,16 @@ export const useCatchInteractions = ({
         toast.success("Unfollowed angler");
       }
     } else {
-      const { error } = await supabase.from("profile_follows").insert({
-        follower_id: userId,
-        following_id: catchData.user_id,
+      const { error } = await supabase.rpc("follow_profile_with_rate_limit", {
+        p_following_id: catchData.user_id,
       });
 
       if (error) {
-        toast.error("Failed to follow angler");
+        if (isRateLimitError(error)) {
+          toast.error(getRateLimitMessage(error));
+        } else {
+          toast.error("Failed to follow angler");
+        }
         logger.error("Failed to follow angler", error, { userId, ownerId: catchData.user_id });
       } else {
         setIsFollowing(true);
@@ -162,15 +166,19 @@ export const useCatchInteractions = ({
         logger.error("Couldn't remove reaction", error, { catchId: catchData.id, userId });
       }
     } else {
-      const { error } = await supabase.from("catch_reactions").insert({
-        catch_id: catchData.id,
-        user_id: userId,
-        reaction: "like",
+      const { error } = await supabase.rpc("react_to_catch_with_rate_limit", {
+        p_catch_id: catchData.id,
+        p_reaction: "like",
       });
 
       if (error) {
+        if (isRateLimitError(error)) {
+          toast.error(getRateLimitMessage(error));
+          setReactionLoading(false);
+          return;
+        }
+
         if (error.code === "23505") {
-          // unique constraint hit – treat as already reacted
           setUserHasReacted(true);
         } else {
           toast.error("Couldn't add reaction");
@@ -271,14 +279,17 @@ export const useCatchInteractions = ({
       return;
     }
 
-    const { error } = await supabase.from("ratings").insert({
-      catch_id: catchId,
-      user_id: userId,
-      rating: userRating,
+    const { error } = await supabase.rpc("rate_catch_with_rate_limit", {
+      p_catch_id: catchId,
+      p_rating: userRating,
     });
 
     if (error) {
-      toast.error("Failed to add rating");
+      if (isRateLimitError(error)) {
+        toast.error(getRateLimitMessage(error));
+      } else {
+        toast.error("Failed to add rating");
+      }
     } else {
       toast.success("Rating added!");
       setHasRated(true);

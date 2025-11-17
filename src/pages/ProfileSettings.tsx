@@ -20,7 +20,7 @@ import { profileSchema, passwordChangeSchema, type ProfileFormData, type Passwor
 const PROFILE_STATUS_PLACEHOLDER = "Nothing here yet. Tell people what you fish for.";
 
 const ProfileSettings = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
   // Profile Form with Zod validation
@@ -177,7 +177,11 @@ const ProfileSettings = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Failed to sign out. Please try again.");
+      return;
+    }
     toast.success("Signed out");
     navigate("/auth");
   };

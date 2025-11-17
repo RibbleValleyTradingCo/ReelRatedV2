@@ -8,6 +8,10 @@ import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
 import { notifyAdmins } from "@/lib/notifications";
 import { useRateLimit, formatResetTime } from "@/hooks/useRateLimit";
+import type { Database } from "@/integrations/supabase/types";
+import { isRateLimitError, getRateLimitMessage } from "@/lib/rateLimit";
+
+type ReportRow = Database["public"]["Tables"]["reports"]["Row"];
 
 interface ReportButtonProps {
   targetType: "catch" | "comment" | "profile";
@@ -52,23 +56,22 @@ export const ReportButton = ({ targetType, targetId, label = "Report", className
     }
 
     setSubmitting(true);
-    const payload = {
-      reporter_id: user.id,
-      target_type: targetType,
-      target_id: targetId,
-      reason: reason.trim(),
-    };
-
-    const { data: reportRecord, error } = await supabase
-      .from("reports")
-      .insert(payload)
-      .select("id, target_type, target_id")
-      .single();
+    const { data: reportRecord, error } = await supabase.rpc("create_report_with_rate_limit", {
+      p_target_type: targetType,
+      p_target_id: targetId,
+      p_reason: reason.trim(),
+      p_details: null,
+    });
 
     if (error) {
       console.error("Failed to submit report", error);
-      toast.error("Unable to submit report. Please try again.");
+      if (isRateLimitError(error)) {
+        toast.error(getRateLimitMessage(error));
+      } else {
+        toast.error("Unable to submit report. Please try again.");
+      }
     } else {
+      const insertedReport = reportRecord as ReportRow | null;
       toast.success("Report submitted");
       setOpen(false);
       setReason("");
@@ -76,7 +79,7 @@ export const ReportButton = ({ targetType, targetId, label = "Report", className
         reporter_id: user.id,
         target_type: targetType,
         target_id: targetId,
-        report_id: reportRecord?.id,
+        report_id: insertedReport?.id,
         reason: reason.trim(),
         message: `${user.user_metadata?.username ?? user.email ?? "Someone"} reported a ${targetType}.`,
       });

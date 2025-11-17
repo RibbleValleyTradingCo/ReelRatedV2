@@ -303,9 +303,6 @@ export const HeroLeaderboardSpotlight = () => {
               </span>
               <div className="flex items-end gap-1">
                 <span className="text-3xl font-black md:text-4xl">{scoreValue}</span>
-                {scoreValue !== "—" ? (
-                  <span className="text-sm font-semibold text-white/70">/100</span>
-                ) : null}
               </div>
             </div>
             <div className="flex min-w-[120px] flex-col items-center gap-2">

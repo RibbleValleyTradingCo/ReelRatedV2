@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Star, Trophy, Fish, BarChart3, Loader2, Settings, Sparkles } from "lucide-react";
 import { getFreshwaterSpeciesLabel } from "@/lib/freshwater-data";
 import { createNotification } from "@/lib/notifications";
+import { isRateLimitError, getRateLimitMessage } from "@/lib/rateLimit";
 import { getProfilePath, isUuid } from "@/lib/profile";
 import { resolveAvatarUrl } from "@/lib/storage";
 import { ProfileNotificationsSection } from "@/components/ProfileNotificationsSection";
@@ -266,13 +267,16 @@ const Profile = () => {
         setFollowersCount((count) => Math.max(0, count - 1));
       }
     } else {
-      const { error } = await supabase.from("profile_follows").insert({
-        follower_id: user.id,
-        following_id: profileId,
+      const { error } = await supabase.rpc("follow_profile_with_rate_limit", {
+        p_following_id: profileId,
       });
 
       if (error) {
-        toast.error("Failed to follow");
+        if (isRateLimitError(error)) {
+          toast.error(getRateLimitMessage(error));
+        } else {
+          toast.error("Failed to follow");
+        }
       } else {
         setIsFollowing(true);
         setFollowersCount((count) => count + 1);
