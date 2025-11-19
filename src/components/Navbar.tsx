@@ -138,7 +138,7 @@ export const Navbar = () => {
     <div className="flex items-center gap-3 md:gap-4">
       <button
         type="button"
-        className={iconButtonBase}
+        className={cn(iconButtonBase, "hidden sm:inline-flex")}
         aria-label={isOnSearchRoute ? "Close search" : "Open search"}
         onClick={handleSearchToggle}
       >

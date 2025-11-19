@@ -476,29 +476,26 @@ const Index = () => {
           .from("catches")
           .select("id", { count: "exact", head: true })
           .eq("visibility", "public");
-        const anglerCountPromise = supabase
-          .from("profiles")
-          .select("id", { count: "exact", head: true });
-        const locationsPromise = supabase
+        const catchDetailsPromise = supabase
           .from("catches")
           .select("location, hide_exact_spot, visibility, user_id")
-          .eq("visibility", "public")
-          .not("location", "is", null)
-          .neq("location", "");
-        const [catchCountRes, anglerCountRes, locationsRes] = await Promise.all([
+          .eq("visibility", "public");
+        const [catchCountRes, catchDetailsRes] = await Promise.all([
           catchCountPromise,
-          anglerCountPromise,
-          locationsPromise,
+          catchDetailsPromise,
         ]);
 
         if (catchCountRes.error) throw catchCountRes.error;
-        if (anglerCountRes.error) throw anglerCountRes.error;
-        if (locationsRes.error) throw locationsRes.error;
+        if (catchDetailsRes.error) throw catchDetailsRes.error;
 
         if (!isMounted) return;
 
         const locationSet = new Set<string>();
-        (locationsRes.data ?? []).forEach((row) => {
+        const anglerSet = new Set<string>();
+        (catchDetailsRes.data ?? []).forEach((row) => {
+          if (row.user_id) {
+            anglerSet.add(row.user_id);
+          }
           const trimmed = row.location?.trim();
           if (!trimmed) return;
           if (
@@ -510,7 +507,7 @@ const Index = () => {
 
         setStats({
           totalCatches: catchCountRes.count ?? 0,
-          activeAnglers: anglerCountRes.count ?? 0,
+          activeAnglers: anglerSet.size,
           waterways: locationSet.size,
         });
       } catch (error) {
