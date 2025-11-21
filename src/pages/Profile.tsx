@@ -478,13 +478,21 @@ const Profile = () => {
                         </Link>
                       </Button>
                     </>
-                  ) : (
+                  ) : user ? (
                     <Button
                       className="h-10 rounded-full bg-sky-500 px-5 text-sm font-semibold text-white hover:bg-sky-600"
                       onClick={handleToggleFollow}
                       disabled={followLoading}
                     >
                       {followLoading ? "Updating…" : isFollowing ? "Following" : "Follow angler"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="h-10 rounded-full border-white/40 bg-white/10 px-5 text-sm text-white/80"
+                      disabled
+                    >
+                      Sign in to follow anglers
                     </Button>
                   )}
                   <Button

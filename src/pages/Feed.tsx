@@ -64,6 +64,10 @@ interface Catch {
 }
 
 const PAGE_SIZE = 18;
+const sanitizeCustomSpeciesInput = (value: string) => {
+  const allowed = value.replace(/[^a-zA-Z0-9\s\-'\u2019]/g, "");
+  return allowed.replace(/\s+/g, " ").trim();
+};
 
 const Feed = () => {
   const { user } = useAuthUser();
@@ -244,6 +248,14 @@ const Feed = () => {
     }
   }, [speciesFilter, customSpeciesFilter]);
 
+  const handleCustomSpeciesFilterChange = useCallback(
+    (value: string) => {
+      const sanitized = sanitizeCustomSpeciesInput(value);
+      setCustomSpeciesFilter(sanitized);
+    },
+    [setCustomSpeciesFilter],
+  );
+
   const handleLoadMore = useCallback(async () => {
     if (!user || !hasMore || isFetchingMore || sessionFilter) {
       return;
@@ -298,7 +310,7 @@ const Feed = () => {
           speciesFilter={speciesFilter}
           onSpeciesFilterChange={setSpeciesFilter}
           customSpeciesFilter={customSpeciesFilter}
-          onCustomSpeciesFilterChange={setCustomSpeciesFilter}
+          onCustomSpeciesFilterChange={handleCustomSpeciesFilterChange}
           sortBy={sortBy}
           onSortByChange={setSortBy}
           userDisabled={!user}
@@ -327,15 +339,19 @@ const Feed = () => {
           <EmptyState
             message={
               catches.length === 0
-                ? "No catches yet. Be the first to share!"
+                ? user
+                  ? "No catches yet. Be the first to share!"
+                  : "No catches shared yet. Sign in to start logging your trips."
                 : sessionFilter
                   ? "No catches logged for this session yet."
                   : feedScope === "following"
                     ? "No catches from anglers you follow yet. Explore the full feed or follow more people."
-                    : "No catches match your filters"
+                    : user
+                      ? "No catches match your filters."
+                      : "No catches match these filters yet. Try changing them or browsing other anglers’ catches."
             }
-            actionLabel="Log Your First Catch"
-            onActionClick={() => navigate("/add-catch")}
+            actionLabel={user ? "Log Your First Catch" : undefined}
+            onActionClick={user ? () => navigate("/add-catch") : undefined}
           />
         )}
       </div>

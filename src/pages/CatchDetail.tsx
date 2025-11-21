@@ -15,7 +15,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +70,7 @@ const CatchDetail = () => {
 
   const {
     catchData,
+    isUnavailable,
     ratings,
     hasRated,
     isLoading,
@@ -154,11 +155,34 @@ const CatchDetail = () => {
     }
   }, [catchData, followStatusLoaded, isFollowing, navigate, user?.id]);
 
-  if (isLoading || !catchData) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted">
         <Navbar />
         <div className="container mx-auto px-4 py-8">Loading...</div>
+      </div>
+    );
+  }
+
+  if (isUnavailable || !catchData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16 flex justify-center">
+          <Card className="max-w-lg text-center">
+            <CardHeader>
+              <CardTitle>This catch is no longer available</CardTitle>
+              <CardDescription>
+                It may have been removed or set to private. Head back to the community feed to explore other catches.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link to="/feed">Return to feed</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

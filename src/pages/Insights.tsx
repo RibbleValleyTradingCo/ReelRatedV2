@@ -177,6 +177,13 @@ const Insights = () => {
     }
   }, [datePreset, latestSessionId]);
 
+  useEffect(() => {
+    if (datePreset === "last-session" && !latestSessionId) {
+      setDatePreset("all");
+      setSelectedSessionId("all");
+    }
+  }, [datePreset, latestSessionId]);
+
   const effectiveSessionId = useMemo(() => {
     if (selectedSessionId !== "all") {
       return selectedSessionId;

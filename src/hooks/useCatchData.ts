@@ -84,6 +84,7 @@ interface UseCatchDataParams {
 export const useCatchData = ({ catchId, userId }: UseCatchDataParams) => {
   const navigate = useNavigate();
   const [catchData, setCatchData] = useState<CatchData | null>(null);
+  const [isUnavailable, setIsUnavailable] = useState(false);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [hasRated, setHasRated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,13 +100,21 @@ export const useCatchData = ({ catchId, userId }: UseCatchDataParams) => {
       .from("catches")
       .select("*, profiles:user_id (username, avatar_path, avatar_url), session:session_id (id, title, venue_name_manual, date)")
       .eq("id", catchId)
-      .single();
+      .is("deleted_at", null)
+      .maybeSingle();
 
     if (error) {
       toast.error("Failed to load catch");
       navigate("/feed");
     } else {
+      if (!data) {
+        setCatchData(null);
+        setIsUnavailable(true);
+        setIsLoading(false);
+        return;
+      }
       setCatchData(data as CatchData);
+      setIsUnavailable(false);
     }
     setIsLoading(false);
   }, [catchId, navigate]);
@@ -206,6 +215,7 @@ export const useCatchData = ({ catchId, userId }: UseCatchDataParams) => {
 
   return {
     catchData,
+    isUnavailable,
     ratings,
     hasRated,
     isLoading,

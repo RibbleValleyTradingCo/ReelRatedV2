@@ -187,7 +187,8 @@ const ProfileSettings = () => {
       return;
     }
 
-    if (trimmedNewEmail.toLowerCase() === initialEmail.toLowerCase()) {
+    const normalizedCurrentEmail = initialEmail.trim().toLowerCase();
+    if (trimmedNewEmail.toLowerCase() === normalizedCurrentEmail) {
       toast.error("That’s already your current email.");
       return;
     }
@@ -205,7 +206,10 @@ const ProfileSettings = () => {
       }
 
       toast.success("Check your inbox to confirm the new email address.");
-      emailForm.reset();
+      emailForm.reset({
+        newEmail: "",
+        confirmEmail: "",
+      });
     } catch (error) {
       console.error("Failed to change email", error);
       toast.error(error instanceof Error ? error.message : "Unable to change email.");
