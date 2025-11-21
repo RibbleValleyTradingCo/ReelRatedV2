@@ -61,33 +61,18 @@ const Auth = () => {
   };
 
   const handleSignUp = async (data: SignUpFormData) => {
-    // Check if email already exists using RPC function
-    const { data: emailExists, error: emailCheckError } = await supabase
-      .rpc('check_email_exists', {
-        email_to_check: data.email.toLowerCase()
-      });
-
-    if (emailCheckError) {
-      console.error('Error checking email:', emailCheckError);
-      // Continue anyway - better to allow signup than block it
-    } else if (emailExists) {
-      toast.error('This email is already registered. Please sign in instead.');
-      return;
-    }
-
     // Check if username already exists
     const { data: existingUsername } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', data.username.toLowerCase())
+      .from("profiles")
+      .select("id")
+      .eq("username", data.username.toLowerCase())
       .maybeSingle();
 
     if (existingUsername) {
-      toast.error('This username is already taken. Please choose another.');
+      toast.error("This username is already taken. Please choose another.");
       return;
     }
 
-    // Proceed with signup
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -100,10 +85,15 @@ const Auth = () => {
     });
 
     if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Account created! Check your email to verify!");
+      if (error.code === "23505") {
+        toast.error("This email is already registered. Please sign in instead.");
+      } else {
+        toast.error(error.message);
+      }
+      return;
     }
+
+    toast.success("Account created! Check your email to verify!");
   };
 
   const handleGoogleSignIn = async () => {

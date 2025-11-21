@@ -34,6 +34,8 @@ export const NotificationsBell = ({
     markOne,
     markAll,
     clearAll,
+    markingAll,
+    clearingAll,
   } = useNotifications(user?.id ?? null, limit);
 
   useEffect(() => {
@@ -108,14 +110,16 @@ export const NotificationsBell = ({
   );
 
   const handleMarkAllClick = useCallback(() => {
-    if (unreadCount > 0) {
+    if (unreadCount > 0 && !markingAll) {
       void markAll();
     }
-  }, [markAll, unreadCount]);
+  }, [markAll, markingAll, unreadCount]);
 
   const handleClearAll = useCallback(() => {
-    void clearAll();
-  }, [clearAll]);
+    if (!clearingAll) {
+      void clearAll();
+    }
+  }, [clearAll, clearingAll]);
 
   if (authLoading || !user) {
     return null;
@@ -181,9 +185,16 @@ export const NotificationsBell = ({
                 size="sm"
                 className="h-auto px-2 text-xs text-destructive"
                 onClick={handleClearAll}
-                disabled={notifications.length === 0}
+                disabled={notifications.length === 0 || clearingAll}
               >
-                Clear all
+                {clearingAll ? (
+                  <>
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                    Clearing…
+                  </>
+                ) : (
+                  "Clear all"
+                )}
               </Button>
             </div>
           </div>
@@ -194,9 +205,16 @@ export const NotificationsBell = ({
               size="sm"
               className="h-auto px-0 text-xs"
               onClick={handleMarkAllClick}
-              disabled={unreadCount === 0}
+              disabled={unreadCount === 0 || markingAll}
             >
-              Mark all read
+              {markingAll ? (
+                <>
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  Working…
+                </>
+              ) : (
+                "Mark all read"
+              )}
             </Button>
           </div>
         </div>

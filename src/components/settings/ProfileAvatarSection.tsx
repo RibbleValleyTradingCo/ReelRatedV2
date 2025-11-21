@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getPublicAssetUrl, uploadAvatarToStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { Loader2, Upload, Fish } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProfileAvatarSectionProps {
   userId: string;
@@ -20,6 +21,19 @@ const initialsFromName = (name: string) => {
   const parts = trimmed.split(/[\s_]+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
+};
+
+const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
+
+const validateAvatarFile = (file: File): string | null => {
+  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    return "Please upload a JPG, PNG, or WEBP image.";
+  }
+  if (file.size > MAX_AVATAR_SIZE_BYTES) {
+    return "Avatar must be smaller than 5MB.";
+  }
+  return null;
 };
 
 export const ProfileAvatarSection = ({
@@ -55,6 +69,13 @@ export const ProfileAvatarSection = ({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const validationMessage = validateAvatarFile(file);
+    if (validationMessage) {
+      setError(validationMessage);
+      toast.error(validationMessage);
+      return;
+    }
+
     setUploading(true);
     setError(null);
 
